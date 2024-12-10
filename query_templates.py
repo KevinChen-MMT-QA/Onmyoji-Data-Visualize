@@ -10,26 +10,33 @@ def parse(input_tuple):
     return parse_string
 
 
-def normal_query(B, M, yuhun_M, D, yuhun_D):
+def normal_query(B, M, yuhun_M, D, yuhun_D, start_time, end_time):
+    if start_time > end_time or start_time is None or end_time is None:
+        raise TypeError
     permutations_list = list(itertools.permutations(range(1, 6), 5))
-    query = 'select * from dws_retail_cust_dj'
+    query = f'select * from dws_retail_cust_dj'
     query_list = []
     query_sub_list1 = []
     query_sub_list2 = []
+    query_list.append(f"battle_time between '{start_time}' and '{end_time}'")
     for ban in B:
         if ban is not None:
             query_list.append(f"(M1 != '{ban}' and M2 != '{ban}' and M3 != '{ban}' and M4 != '{ban}' and M5 != '{ban}' and D1 != '{ban}' and D2 != '{ban}' and D3 != '{ban}' and D4 != '{ban}' and D5 != '{ban}')\n")
     for perm in permutations_list:
         m_list = list(map(parse, [('m', m, yuhun, idx) for m, yuhun, idx in zip(M, yuhun_M, perm) if m is not None]))
-        query_sub_list1.append(f"({' and '.join(m_list)})")
+        if m_list:
+            query_sub_list1.append(f"({' and '.join(m_list)})")
 
         d_list = list(map(parse, [('d', d, yuhun, idx) for d, yuhun, idx in zip(D, yuhun_D, perm) if d is not None]))
-        query_sub_list2.append(f"({' and '.join(d_list)})")
+        if d_list:
+            query_sub_list2.append(f"({' and '.join(d_list)})")
+    
+    if query_sub_list1:
+        query_list.append(f"({' or '.join(list(set(query_sub_list1)))})")
+    if query_sub_list2:
+        query_list.append(f"({' or '.join(list(set(query_sub_list2)))})")
 
-    query_list.append(f"({' or '.join(list(set(query_sub_list1)))})")
-    query_list.append(f"({' or '.join(list(set(query_sub_list2)))})")
-
-    if query_list != []:
+    if query_list:
         query += ' where ' + ' and '.join(query_list)
 
     return query

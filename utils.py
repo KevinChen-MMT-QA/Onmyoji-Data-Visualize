@@ -26,7 +26,8 @@ def parse_query_config(yaml_file_path):
     yuhun_M = [shishen['yuhun'] for shishen in config['team_m']]
     D = [shishen['name'] for shishen in config['team_d']]
     yuhun_D = [shishen['yuhun'] for shishen in config['team_d']]
-    return B, M, yuhun_M, D, yuhun_D
+    start_time, end_time = config['start_time'], config['end_time']
+    return B, M, yuhun_M, D, yuhun_D, start_time, end_time
 
 def report_result(M, D, result):
     M = list(filter(lambda x: x is not None, M))
@@ -89,15 +90,19 @@ def excel2db(args=None):
             print(f"{filename} 已成功导入")
 
 def show_query_result():
-    B, M, yuhun_M, D, yuhun_D = parse_query_config('config/query_config.yaml')
-    raw_result = execute_query(normal_query(B, M, yuhun_M, D, yuhun_D))
+    B, M, yuhun_M, D, yuhun_D, start_time, end_time = parse_query_config('config/query_config.yaml')
+    raw_result = execute_query(normal_query(B, M, yuhun_M, D, yuhun_D, start_time, end_time))
     clean_result = report_result(M, D, raw_result)
     clean_result.sort(key=lambda x: (x[-1], x[2]/x[3]), reverse=True)
 
     report_num = 40
     plt.figure(figsize=(report_num / 4, report_num / 2))
     for id, result in enumerate(clean_result[:report_num]):
-        M_image, D_image = get_image(result[0], result[1])
+        try:
+            M_image, D_image = get_image(result[0], result[1])
+        except:
+            print('Error:', result)
+            continue
         plt.subplot(report_num, 3, 3*id+1)
         plt.imshow(M_image)
         plt.axis('off')
@@ -118,4 +123,6 @@ def show_query_result():
 if __name__ == '__main__':
     # excel2db()
     # sql = f'select * from dws_retail_cust_dj where '
-    show_query_result()
+    # show_query_result()
+    B, M, yuhun_M, D, yuhun_D, start_time, end_time = parse_query_config('config/query_config.yaml')
+    print(normal_query(B, M, yuhun_M, D, yuhun_D, start_time, end_time))
